@@ -15,13 +15,13 @@
 
 ## 安裝
 
-1. 用 `dotnet build -c Release` 編譯，把 `bin/Release/net10.0/` 的內容複製到 `addons/counterstrikesharp/plugins/NaiWa/`。
-2. 把 [assets/content/](assets/content/) 複製到 addon 的 content 資料夾，用 Workshop Tools 編譯以下檔案，再更新伺服器使用的工作坊 addon：
+1. 從 [Releases](../../releases) 下載 `CS2-NaiWa-<版本>.zip`，解壓縮到 `game/csgo/`。
+2. 下載 `CS2-NaiWa-addon-<版本>.zip`，解壓縮到 addon 的 content 資料夾，用 Workshop Tools 編譯以下檔案，再更新伺服器使用的工作坊 addon：
    - `models/naiwa/naiwa_standee.vmdl`
    - `soundevents/naiwa.vsndevts`
    - `sounds/naiwa/naiwa.mp3`
-3. 需要 CounterStrikeSharp 1.0.376 以上（.NET 10），以及 Clientprefs 插件（`shared/ClientprefsApi`）。
-   笑聲音量讀取玩家的 `Volume` cookie，和其他音效插件共用同一個設定。
+3. 需要 CounterStrikeSharp 1.0.376 以上（.NET 10）。
+   Clientprefs v1.0.7 以上為選用：有安裝時，笑聲音量會讀取玩家的 `Volume` cookie，和其他音效插件共用同一個設定；沒有安裝時使用 `DefaultVolume`。
 
 ## 設定
 
@@ -67,7 +67,17 @@
 
 每張地圖的修改存在 `configs/plugins/NaiWa/maps/<地圖>.json`。
 
-## 開發工具
+## 開發
+
+```
+dotnet build CS2-NaiWa.csproj -c Release
+```
+
+需要 .NET 10 SDK，輸出在 `bin/Release/net10.0/`。第一次編譯時會下載 `ClientprefsApi.dll` 到 `obj/`，只用來編譯，不會包進插件。
+
+推送 `v*` tag（例如 `v1.0.0`）會由 GitHub Actions 自動編譯並發布 release。tag 必須和 `src/NaiWaPlugin.cs` 的 `ModuleVersion` 一致。
+
+### 工具
 
 - [tools/make_standee.py](tools/make_standee.py)：用角色圖片產生立牌模型的原始檔（需要 numpy、opencv-python）。
 - [tools/NavProbe](tools/NavProbe)：離線測試 nav 讀取和選點。

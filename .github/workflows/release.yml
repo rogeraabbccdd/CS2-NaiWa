@@ -1,0 +1,69 @@
+name: Release
+
+# Push a tag like v1.0.0 to build the plugin and publish a GitHub release.
+on:
+  push:
+    tags:
+      - "v*"
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          fetch-depth: 0 # tags and history for the release notes
+
+      - uses: actions/setup-dotnet@v5
+        with:
+          dotnet-version: "10.0.x"
+
+      - name: Check the version
+        run: |
+          VERSION="${GITHUB_REF_NAME#v}"
+          MODULE_VERSION=$(grep -oP 'ModuleVersion\s*=>\s*"\K[^"]+' src/NaiWaPlugin.cs)
+          if [ "$VERSION" != "$MODULE_VERSION" ]; then
+            echo "::error::Tag $GITHUB_REF_NAME does not match ModuleVersion $MODULE_VERSION in src/NaiWaPlugin.cs"
+            exit 1
+          fi
+
+      - name: Build
+        run: dotnet build CS2-NaiWa.csproj -c Release
+
+      - name: Package
+        run: |
+          OUT=bin/Release/net10.0
+          PLUGIN=package/addons/counterstrikesharp/plugins/NaiWa
+          mkdir -p "$PLUGIN"
+          # ClientprefsApi.dll is only used to compile; the server gets it from Clientprefs
+          cp "$OUT/NaiWa.dll" "$OUT/NaiWa.deps.json" "$OUT/ValvePak.dll" "$OUT/System.IO.Hashing.dll" "$PLUGIN/"
+          cp -r "$OUT/lang" "$PLUGIN/"
+          (cd package && zip -r "../CS2-NaiWa-$GITHUB_REF_NAME.zip" addons)
+          (cd assets/content && zip -r "../../CS2-NaiWa-addon-$GITHUB_REF_NAME.zip" .)
+
+      - name: Release notes
+        run: |
+          PREV=$(git describe --tags --abbrev=0 "$GITHUB_REF_NAME^" 2>/dev/null || true)
+          {
+            echo "## Changes"
+            if [ -n "$PREV" ]; then
+              git log --no-merges --format='- %s' "$PREV..$GITHUB_REF_NAME"
+            else
+              echo "Initial release"
+            fi
+            echo
+            echo "## Install"
+            echo "- \`CS2-NaiWa-$GITHUB_REF_NAME.zip\`: extract into \`game/csgo/\`"
+            echo "- \`CS2-NaiWa-addon-$GITHUB_REF_NAME.zip\`: copy into your workshop addon, compile and publish it"
+          } > notes.md
+          cat notes.md
+
+      - name: Publish
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release create "$GITHUB_REF_NAME" --title "$GITHUB_REF_NAME" --notes-file notes.md \
+            "CS2-NaiWa-$GITHUB_REF_NAME.zip" "CS2-NaiWa-addon-$GITHUB_REF_NAME.zip"
