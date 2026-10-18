@@ -1,0 +1,52 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <RootNamespace>NaiWa</RootNamespace>
+    <AssemblyName>NaiWa</AssemblyName>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <CopyLocalLockFileAssemblies>true</CopyLocalLockFileAssemblies>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Compile Remove="tools/**;assets/**" />
+    <None Remove="tools/**;assets/**" />
+    <None Include="lang/**" CopyToOutputDirectory="PreserveNewest" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="CounterStrikeSharp.API" Version="1.0.376">
+      <ExcludeAssets>runtime</ExcludeAssets>
+    </PackageReference>
+    <PackageReference Include="ValvePak" Version="3.0.3.132" />
+  </ItemGroup>
+
+  <!-- ClientprefsApi is downloaded from the Clientprefs release on the first build -->
+  <PropertyGroup>
+    <ClientprefsVersion>v1.0.7</ClientprefsVersion>
+    <ClientprefsDir>$(MSBuildProjectDirectory)/obj/Clientprefs/$(ClientprefsVersion)</ClientprefsDir>
+    <ClientprefsZip>Clientprefs_$(ClientprefsVersion).zip</ClientprefsZip>
+    <ClientprefsApiDll>$(ClientprefsDir)/ClientprefsApi.dll</ClientprefsApiDll>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <!-- Loaded from addons/counterstrikesharp/shared at runtime, so it is not copied to the output -->
+    <Reference Include="ClientprefsApi">
+      <HintPath>$(ClientprefsApiDll)</HintPath>
+      <Private>false</Private>
+    </Reference>
+  </ItemGroup>
+
+  <!-- Unique temp names, so the IDE's background build running at the same time does not collide -->
+  <Target Name="DownloadClientprefsApi" BeforeTargets="ResolveAssemblyReferences" Condition="!Exists('$(ClientprefsApiDll)')">
+    <PropertyGroup>
+      <ClientprefsTemp>$(ClientprefsDir)/tmp-$([System.Guid]::NewGuid().ToString('N'))</ClientprefsTemp>
+    </PropertyGroup>
+    <DownloadFile SourceUrl="https://github.com/Cruze03/Clientprefs/releases/download/$(ClientprefsVersion)/$(ClientprefsZip)" DestinationFolder="$(ClientprefsTemp)" Retries="3" />
+    <Unzip SourceFiles="$(ClientprefsTemp)/$(ClientprefsZip)" DestinationFolder="$(ClientprefsTemp)" />
+    <Copy SourceFiles="$(ClientprefsTemp)/addons/counterstrikesharp/shared/ClientprefsApi/ClientprefsApi.dll" DestinationFiles="$(ClientprefsApiDll)" Retries="5" RetryDelayMilliseconds="200" />
+    <RemoveDir Directories="$(ClientprefsTemp)" ContinueOnError="true" />
+  </Target>
+
+</Project>
