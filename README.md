@@ -6,79 +6,93 @@
 
 ## 功能
 
-- 每回合開始時，在地圖上隨機選一個位置生成奶蛙立牌（`func_breakable`）。
-- 位置取自地圖的 nav：只選玩家走得到、夠大、夠平的地板，並避開出生點和最近幾回合出現過的位置。
-- 支援官方地圖和工作坊地圖。插件會自動掃描工作坊資料夾、建立索引，收藏更新後不用手動處理。
-- 可以設定 health，或設成無法破壞。
-- 對奶蛙按 E 會播放笑聲（每位玩家有冷卻時間）。
-- 管理員可以在遊戲中新增固定位置、排除不好的位置，或停用某張地圖。
+- 每回合奶蛙會出現在地圖上的隨機位置，而且一定是玩家走得到的地方
+- 對奶蛙按 E，會聽到奶蛙的笑聲
+- 找不到奶蛙？輸入 `!naiwa`，看看它在哪個方向
+- 可以讓奶蛙被打壞，也可以設成打不壞
+- 官方地圖和工作坊地圖都能用
+- 管理員可以在遊戲中調整奶蛙會出現的位置
+
+## 需求
+
+- [CounterStrikeSharp](https://github.com/roflmuffin/CounterStrikeSharp) v1.0.376 以上
+- [MultiAddonManager](https://github.com/Source2ZE/MultiAddonManager)：讓伺服器載入奶蛙的模型和音效，玩家進伺服器時也會自動下載
+- [Clientprefs](https://github.com/Cruze03/Clientprefs) v1.0.7 以上（選用）：讓每位玩家用自己的音量聽笑聲
 
 ## 安裝
 
-1. 從 [Releases](../../releases) 下載 `CS2-NaiWa-<版本>.zip`，解壓縮到 `game/csgo/`。
-2. 下載 `CS2-NaiWa-addon-<版本>.zip`，解壓縮到 addon 的 content 資料夾，用 Workshop Tools 編譯以下檔案，再更新伺服器使用的工作坊 addon：
-   - `models/naiwa/naiwa_standee.vmdl`
-   - `soundevents/naiwa.vsndevts`
-   - `sounds/naiwa/naiwa.mp3`
-3. 需要 CounterStrikeSharp 1.0.376 以上（.NET 10）。
-   Clientprefs v1.0.7 以上為選用：有安裝時，笑聲音量會讀取玩家的 `Volume` cookie，和其他音效插件共用同一個設定；沒有安裝時使用 `DefaultVolume`。
+1. 從 [Releases](../../releases) 下載 `CS2-NaiWa-<版本>.zip`，解壓縮到伺服器的 `game/csgo/`。
+2. 準備奶蛙的模型和音效：
+   1. 下載 `CS2-NaiWa-addon-<版本>.zip`，解壓縮到你的 addon 資料夾 `content/csgo_addons/<addon 名稱>/`。
+   2. 用 CS2 Workshop Tools 編譯 `models/naiwa/naiwa_standee.vmdl`、`soundevents/naiwa.vsndevts` 和 `sounds/naiwa/naiwa.mp3`。
+   3. 把 addon 上傳到工作坊。
+3. 用 MultiAddonManager 載入這個 addon：把它的工作坊 ID 加進 `cfg/multiaddonmanager/multiaddonmanager.cfg` 的 `mm_extra_addons`。如果你已經有放自訂內容的 addon，也可以直接把奶蛙放進同一個 addon。
+4. 重新啟動伺服器。
 
 ## 設定
 
-設定檔在 `configs/plugins/NaiWa/NaiWa.json`：
+第一次啟動後，設定檔會出現在 `addons/counterstrikesharp/configs/plugins/NaiWa/NaiWa.json`。
 
 | 設定 | 預設值 | 說明 |
 | --- | --- | --- |
-| `MapPrefixes` | `["de_", "cs_"]` | 只在這些前綴的地圖出現 |
-| `DefaultVolume` | `0.4` | 玩家沒有設定 `Volume` cookie，或 Clientprefs 無法使用時的音量 |
-| `Health` | `0` | 0 表示無法破壞 |
-| `BreakableMaterial` | `1` | func_breakable 材質（1 = 木頭） |
-| `UseDistance` | `120` | 按 E 的有效距離 |
+| `MapPrefixes` | `["de_", "cs_"]` | 奶蛙只會出現在這些開頭的地圖 |
+| `Health` | `0` | 奶蛙的血量，`0` 代表打不壞 |
+| `BreakableMaterial` | `1` | 奶蛙被打壞時的碎片材質，`1` 是木頭 |
+| `DefaultVolume` | `0.4` | 笑聲的預設音量 |
+| `UseDistance` | `120` | 離奶蛙多近才能按 E |
 | `UseCooldown` | `1.5` | 每位玩家按 E 的冷卻秒數 |
-| `EnableHintCommand` / `HintCooldown` | `true` / `10` | 是否開放玩家用 `!naiwa`，以及冷卻秒數 |
-| `AnnounceSpawn` / `AnnounceBreak` | `true` | 生成、被打壞時是否公告 |
-| `MinDistanceFromSpawn` | `600` | 與出生點的最短距離 |
-| `RecentAvoidCount` / `RecentMinDistance` | `5` / `800` | 避開最近幾次出現的位置 |
-| `ManualSpotChance` | `0.3` | 地圖有手動位置時，使用手動位置的機率 |
-| `MinAreaSize` | `2304` | nav area 的最小面積（平方單位） |
-| `MaxAreaHeightDelta` | `12` | nav area 允許的最大高低差 |
-| `EdgeShrink` | `0.6` | 隨機點往 area 中心靠攏的比例，避免貼牆 |
-| `ExtraWorkshopPaths` | `[]` | 額外的 `workshop/content/730` 路徑 |
+| `EnableHintCommand` | `true` | 是否開放玩家使用 `!naiwa` |
+| `HintCooldown` | `10` | `!naiwa` 的冷卻秒數 |
+| `AnnounceSpawn` | `true` | 奶蛙出現時是否在聊天室公告 |
+| `AnnounceBreak` | `true` | 奶蛙被打壞時是否公告是誰打的 |
+| `MinDistanceFromSpawn` | `600` | 奶蛙離出生點至少要多遠 |
+| `RecentAvoidCount` | `5` | 避開最近幾回合出現過的位置 |
+| `RecentMinDistance` | `800` | 跟最近出現過的位置至少要距離多遠 |
+| `ManualSpotChance` | `0.3` | 地圖有管理員加的固定位置時，使用固定位置的機率 |
+| `MinAreaSize` | `2304` | 太小塊的地板不會放奶蛙，數字越大越挑 |
+| `MaxAreaHeightDelta` | `12` | 太斜的地板不會放奶蛙，數字越小越挑 |
+| `EdgeShrink` | `0.6` | 數字越小，奶蛙越會放在地板中間、離牆越遠 |
+| `ExtraWorkshopPaths` | `[]` | 工作坊地圖抓不到時，可以在這裡補上 `steamapps/workshop/content/730` 的路徑 |
 
-## 玩家指令
+### 音量
+
+有安裝 Clientprefs 時，笑聲會使用玩家的 `Volume` 設定。其他使用同一個 `Volume` 設定的音效插件，玩家只要調一次就好。沒有安裝 Clientprefs，或玩家沒調過音量時，使用 `DefaultVolume`。
+
+## 指令
+
+### 玩家
 
 | 指令 | 說明 |
 | --- | --- |
-| `!naiwa` | 提示奶蛙在你的哪個方向、距離幾公尺、在樓上或樓下（有冷卻時間） |
+| `!naiwa` | 告訴你奶蛙在哪個方向、大約幾公尺遠、在樓上還是樓下 |
 
-## 管理員指令（`@css/generic`）
+### 管理員（需要 `@css/generic` 權限）
 
 | 指令 | 說明 |
 | --- | --- |
-| `css_naiwa_glow` | 開關奶蛙發光，隔著牆也看得到（測試用，所有玩家都看得到） |
-| `css_naiwa_info` | 顯示目前地圖的 nav 狀態、可用 area 數和奶蛙位置 |
-| `css_naiwa_move` | 立刻把奶蛙移到新位置 |
+| `css_naiwa_info` | 顯示奶蛙在這張地圖的狀態和位置 |
 | `css_naiwa_goto` | 傳送到奶蛙面前 |
-| `css_naiwa_add` | 把自己站的位置加為固定位置，奶蛙會面向你看的方向 |
-| `css_naiwa_ban [半徑]` | 排除奶蛙目前位置附近的範圍（預設 256）並移動奶蛙 |
-| `css_naiwa_toggle` | 啟用或停用目前地圖 |
-| `css_naiwa_clear` | 清除目前地圖的固定位置和排除範圍 |
-| `css_naiwa_rescan` | 重建工作坊地圖索引並重新讀取 nav |
+| `css_naiwa_move` | 馬上把奶蛙換到新位置 |
+| `css_naiwa_glow` | 讓奶蛙發光，隔著牆也看得到，方便測試。所有玩家都看得到，測完記得關掉 |
+| `css_naiwa_add` | 把你站的位置加為奶蛙的固定位置，奶蛙會面向你看的方向 |
+| `css_naiwa_ban [半徑]` | 奶蛙卡在奇怪的地方時用，之後不會再出現在那一帶（預設半徑 256） |
+| `css_naiwa_toggle` | 在這張地圖開關奶蛙 |
+| `css_naiwa_clear` | 清掉這張地圖的固定位置和排除範圍 |
+| `css_naiwa_rescan` | 工作坊地圖抓不到 nav 時，重新掃描一次 |
 
-每張地圖的修改存在 `configs/plugins/NaiWa/maps/<地圖>.json`。
+固定位置和排除範圍會存在 `configs/plugins/NaiWa/maps/<地圖名稱>.json`。
 
 ## 開發
+
+需要 .NET 10 SDK。
 
 ```
 dotnet build CS2-NaiWa.csproj -c Release
 ```
 
-需要 .NET 10 SDK，輸出在 `bin/Release/net10.0/`。第一次編譯時會下載 `ClientprefsApi.dll` 到 `obj/`，只用來編譯，不會包進插件。
+推送 `v` 開頭的 tag（例如 `v1.0.0`）會自動發布 release，tag 要和 `src/NaiWaPlugin.cs` 裡的 `ModuleVersion` 一致。
 
-推送 `v*` tag（例如 `v1.0.0`）會由 GitHub Actions 自動編譯並發布 release。tag 必須和 `src/NaiWaPlugin.cs` 的 `ModuleVersion` 一致。
+`tools/` 裡有兩個輔助工具：
 
-### 工具
-
-- [tools/make_standee.py](tools/make_standee.py)：用角色圖片產生立牌模型的原始檔（需要 numpy、opencv-python）。
-- [tools/NavProbe](tools/NavProbe)：離線測試 nav 讀取和選點。
-  用法：`dotnet run -- <官方 maps 資料夾> <workshop/content/730> <輸出資料夾> <地圖>...`
+- `make_standee.py`：用角色圖片產生立牌模型
+- `NavProbe`：在電腦上直接測試地圖的 nav 讀取和選點
