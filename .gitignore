@@ -1,0 +1,10 @@
+bin/
+obj/
+*.user
+.vs/
+
+# Raw source media, not part of the build
+raw/
+
+# make_standee.py debug output
+assets/preview_outline.png

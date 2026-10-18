@@ -1,0 +1,20 @@
+<!-- kv3 encoding:text:version{e21c7f3c-8a33-41c5-9977-a76d3a32aa0d} format:generic:version{7412167c-06e9-4698-aff2-e63eb59037e7} -->
+{
+	NaiWa.Laugh = 
+	{
+		type = "csgo_mega"
+		volume = 1.0
+		occlusion_intensity = 0
+		distance_effect_mix = 0
+		disable_volume_culling = true
+		distance_volume_mapping_curve = 
+		[
+			[ 0, 1, 0, 0, 2, 3, ],
+			[ 1000, 0, 0, 0, 2, 3, ],
+		]
+		vsnd_files_track_01 = 
+		[
+			"sounds/naiwa/naiwa.vsnd",
+		]
+	}
+}
