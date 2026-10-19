@@ -19,7 +19,7 @@ namespace NaiWa;
 public class NaiWaPlugin : BasePlugin, IPluginConfig<NaiWaConfig>
 {
     public override string ModuleName => "NaiWa";
-    public override string ModuleVersion => "1.0.0";
+    public override string ModuleVersion => "1.1.0";
     public override string ModuleAuthor => "Kento";
     public override string ModuleDescription => "流動奶蛙：每回合出現在地圖隨機角落的奶蛙立牌";
 
