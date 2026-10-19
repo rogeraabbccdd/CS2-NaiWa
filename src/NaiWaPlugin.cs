@@ -384,11 +384,20 @@ public class NaiWaPlugin : BasePlugin, IPluginConfig<NaiWaConfig>
 
         _naiwa = null;
         Server.NextFrame(RemoveGlow);
+
+        var breaker = activator is { IsValid: true, DesignerName: "player" }
+            ? new CCSPlayerPawn(activator.Handle).Controller.Value?.As<CCSPlayerController>()
+            : null;
+
+        if (breaker is { IsValid: true, PawnIsAlive: true })
+            Server.NextFrame(() =>
+            {
+                if (breaker is { IsValid: true, PawnIsAlive: true })
+                    breaker.GiveNamedItem("weapon_healthshot");
+            });
+
         if (Config.AnnounceBreak)
         {
-            var breaker = activator.DesignerName == "player"
-                ? new CCSPlayerPawn(activator.Handle).Controller.Value?.As<CCSPlayerController>()
-                : null;
             if (breaker is { IsValid: true })
                 PrintToChatAll("naiwa.broken", breaker.PlayerName);
             else
