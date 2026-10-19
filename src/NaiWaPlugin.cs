@@ -1,11 +1,10 @@
 using System.Drawing;
 using System.Numerics;
+using System.Runtime.CompilerServices;
 using System.Text.RegularExpressions;
-using Clientprefs.API;
 using CounterStrikeSharp.API;
 using CounterStrikeSharp.API.Core;
 using CounterStrikeSharp.API.Core.Attributes.Registration;
-using CounterStrikeSharp.API.Core.Capabilities;
 using CounterStrikeSharp.API.Core.Translations;
 using CounterStrikeSharp.API.Modules.Admin;
 using CounterStrikeSharp.API.Modules.Commands;
@@ -47,9 +46,7 @@ public class NaiWaPlugin : BasePlugin, IPluginConfig<NaiWaConfig>
     private bool _glow;
     private CHandle<CDynamicProp>? _glowProp;
 
-    private readonly PluginCapability<IClientprefsApi> _clientprefsCapability = new("Clientprefs");
-    private IClientprefsApi? _clientprefs;
-    private int _volumeCookie = -1;
+    private IVolumeSource? _volume;
 
     public void OnConfigParsed(NaiWaConfig config) => Config = config;
 
@@ -93,62 +90,27 @@ public class NaiWaPlugin : BasePlugin, IPluginConfig<NaiWaConfig>
     {
         try
         {
-            _clientprefs = _clientprefsCapability.Get();
+            _volume = CreateClientprefsVolume(hotReload);
         }
-        catch (Exception e)
+        catch (Exception e) when (e is FileNotFoundException or FileLoadException or TypeLoadException)
         {
-            Logger.LogWarning("Clientprefs not available, using DefaultVolume: {Message}", e.Message);
+            // ClientprefsApi.dll is not installed in shared/
         }
-        if (_clientprefs == null)
-            return;
-
-        _clientprefs.OnDatabaseLoaded += RegisterVolumeCookie;
-        // The database is already up after a hot reload, so OnDatabaseLoaded will not fire again.
-        if (hotReload)
-            RegisterVolumeCookie();
+        if (_volume == null)
+            Logger.LogInformation("Clientprefs not available, using DefaultVolume");
     }
+
+    // Separate method so a missing ClientprefsApi assembly throws here, where it is caught.
+    [MethodImpl(MethodImplOptions.NoInlining)]
+    private IVolumeSource? CreateClientprefsVolume(bool hotReload) => ClientprefsVolume.TryCreate(Logger, hotReload);
 
     public override void Unload(bool hotReload)
     {
-        if (_clientprefs != null)
-            _clientprefs.OnDatabaseLoaded -= RegisterVolumeCookie;
+        _volume?.Dispose();
         RemoveNaiWa();
     }
 
-    private async void RegisterVolumeCookie()
-    {
-        if (_clientprefs == null)
-            return;
-        try
-        {
-            // Same cookie as the other sound plugins, so one volume setting covers all of them.
-            _volumeCookie = await _clientprefs.RegPlayerCookieAsync("Volume", "Player volume preference", CookieAccess.CookieAccess_Public);
-        }
-        catch (Exception e)
-        {
-            Logger.LogError("Failed to register Volume cookie: {Message}", e.Message);
-            return;
-        }
-        if (_volumeCookie == -1)
-            Logger.LogError("Failed to register Volume cookie");
-    }
-
-    private float GetPlayerVolume(CCSPlayerController player)
-    {
-        if (_clientprefs == null || _volumeCookie == -1)
-            return Config.DefaultVolume;
-        try
-        {
-            var value = _clientprefs.GetPlayerCookie(player, _volumeCookie);
-            if (!string.IsNullOrEmpty(value) && float.TryParse(value, out var parsed))
-                return parsed;
-        }
-        catch (Exception)
-        {
-            // Clientprefs throws when the player is invalid or cookies are not cached yet
-        }
-        return Config.DefaultVolume;
-    }
+    private float GetPlayerVolume(CCSPlayerController player) => _volume?.GetVolume(player) ?? Config.DefaultVolume;
 
     /// <summary>Plays the laugh from the standee, once per listener at their own volume.</summary>
     private void PlayLaugh(CBaseModelEntity naiwa)
