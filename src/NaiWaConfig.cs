@@ -4,9 +4,6 @@ namespace NaiWa;
 
 public class NaiWaConfig : BasePluginConfig
 {
-    /// <summary>NaiWa only appears on maps starting with one of these.</summary>
-    public List<string> MapPrefixes { get; set; } = ["de_", "cs_"];
-
     public string Model { get; set; } = "models/naiwa/naiwa_standee.vmdl";
     public string SoundEventsFile { get; set; } = "soundevents/naiwa.vsndevts";
     public string LaughSound { get; set; } = "NaiWa.Laugh";

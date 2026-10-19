@@ -35,7 +35,6 @@
 
 | 設定 | 預設值 | 說明 |
 | --- | --- | --- |
-| `MapPrefixes` | `["de_", "cs_"]` | 奶蛙只會出現在這些開頭的地圖 |
 | `Health` | `0` | 奶蛙的血量，`0` 代表打不壞 |
 | `BreakableMaterial` | `1` | 奶蛙被打壞時的碎片材質，`1` 是木頭 |
 | `DefaultVolume` | `0.4` | 笑聲的預設音量 |
@@ -53,6 +52,10 @@
 | `MaxAreaHeightDelta` | `12` | 太斜的地板不會放奶蛙，數字越小越挑 |
 | `EdgeShrink` | `0.6` | 數字越小，奶蛙越會放在地板中間、離牆越遠 |
 | `ExtraWorkshopPaths` | `[]` | 工作坊地圖抓不到時，可以在這裡補上 `steamapps/workshop/content/730` 的路徑 |
+
+### 停用
+
+奶蛙預設在所有地圖都會出現。想在特定地圖關掉，可以用依地圖執行 cfg 的插件下 `css_plugins unload NaiWa`，或在那張地圖用 `css_naiwa_toggle`。
 
 ### 音量
 

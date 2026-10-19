@@ -33,7 +33,6 @@ public class NaiWaPlugin : BasePlugin, IPluginConfig<NaiWaConfig>
     private string _mapsDir = "";
 
     private string _map = "";
-    private bool _enabled;
     private int _loadGeneration;
     private List<NavArea>? _areas;
     private SpotPicker? _picker;
@@ -126,7 +125,6 @@ public class NaiWaPlugin : BasePlugin, IPluginConfig<NaiWaConfig>
     private void OnMapStart(string map)
     {
         _map = map;
-        _enabled = Config.MapPrefixes.Any(p => map.StartsWith(p, StringComparison.OrdinalIgnoreCase));
         _areas = null;
         _picker = null;
         _naiwa = null;
@@ -135,11 +133,7 @@ public class NaiWaPlugin : BasePlugin, IPluginConfig<NaiWaConfig>
         _nextUse.Clear();
         _nextHint.Clear();
         _spots = LoadSpots(map);
-
-        if (_enabled)
-            LoadNav(map);
-        else
-            _navStatus = "disabled by MapPrefixes";
+        LoadNav(map);
     }
 
     private void LoadNav(string map)
@@ -178,15 +172,14 @@ public class NaiWaPlugin : BasePlugin, IPluginConfig<NaiWaConfig>
     [GameEventHandler]
     public HookResult OnRoundStart(EventRoundStart @event, GameEventInfo info)
     {
-        if (_enabled)
-            Server.NextFrame(SpawnNaiWa);
+        Server.NextFrame(SpawnNaiWa);
         return HookResult.Continue;
     }
 
     private void SpawnNaiWa()
     {
         RemoveNaiWa();
-        if (!_enabled || _spots.Disabled)
+        if (_spots.Disabled)
             return;
 
         if (!TryChoosePosition(out var pos, out var yaw))
@@ -543,7 +536,7 @@ public class NaiWaPlugin : BasePlugin, IPluginConfig<NaiWaConfig>
     public void OnRescanCommand(CCSPlayerController? player, CommandInfo command)
     {
         _locator.Invalidate();
-        if (_enabled) LoadNav(_map);
+        LoadNav(_map);
         Reply(player, command, "naiwa.admin.rescan");
     }
 
@@ -553,13 +546,13 @@ public class NaiWaPlugin : BasePlugin, IPluginConfig<NaiWaConfig>
     {
         var picker = _picker == null ? "-" : $"{_picker.UsableAreas}/{_picker.TotalAreas}{(_picker.ConnectivityFiltered ? "" : " (no connectivity filter)")}";
         var pos = _naiwa?.Value is { IsValid: true, AbsOrigin: not null } n ? $"{n.AbsOrigin.X:F0} {n.AbsOrigin.Y:F0} {n.AbsOrigin.Z:F0}" : "-";
-        command.ReplyToCommand($"[NaiWa] map={_map} enabled={_enabled && !_spots.Disabled} nav={_navStatus}");
+        command.ReplyToCommand($"[NaiWa] map={_map} enabled={!_spots.Disabled} nav={_navStatus}");
         command.ReplyToCommand($"[NaiWa] usable areas={picker} spots={_spots.Spots.Count} bans={_spots.Bans.Count} position={pos}");
     }
 
     private bool RequireEnabled(CCSPlayerController? player, CommandInfo command)
     {
-        if (_enabled && !_spots.Disabled) return true;
+        if (!_spots.Disabled) return true;
         Reply(player, command, "naiwa.admin.disabled");
         return false;
     }
